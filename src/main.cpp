@@ -39,7 +39,7 @@ void user_input(void){
 /*TODO Variables to hold the state of the lander as returned to
     the MBED board, including altitude,fuel,isflying,iscrashed
 */
-/*TODO YOU will have to hardwire the IP address in here */
+/*YOU will have to hardwire the IP address in here */
 SocketAddress lander("192.168.1.165",65200);
 SocketAddress dash("192.168.1.13",65250);
 
@@ -50,22 +50,37 @@ UDPSocket udp;
 void communications(void){
     SocketAddress source;
 
-    /*TODO Create and format the message to send to the Lander */
-
-    /*TODO Send and recieve messages
-            udp.sendto( lander, <message>, <message length>);
-            nsapi_size_or_error_t  n =
-             udp.recvfrom(&source, <input buffer>, sizeof(<input>buffer));
-    */
+    /*Create and format the message to send to the Lander */
+    char buffer[512];
+    sprintf(buffer, "command:!\n....");
+    /* Send and recieve messages*/
+    udp.sendto( lander, buffer, strlen(buffer));
+    nsapi_size_or_error_t  n =
+                 udp.recvfrom(&source, buffer, sizeof(buffer));
+    buffer[n] = '\0';
 
     /* Unpack incomming message */
-    /*TODO split message into lines*/
-    /*TODO for each line */
-        /*TODO split into key value pairs */
-        /*TODO convert value strings into state variables */
+    /*split message into lines*/
+    /*for each line */
+    char *nextline, *line;
+    for(
+      line = strtok_r(buffer, "\r\n", &nextline);
+      line != NULL;
+      line = strtok_r(NULL, "\r\n", &nextline)
+    ){
+      /* split into key value pairs */
+    char *key, *value;
+    for(
+      key = strtok(line, ":");
+      value = strtok(NULL, ":");
+    )
+     /*convert value strings into state variables */
 
+      if( strcmp(key,"altitude")==0 ){
+        /*do something with the 'altitude' value*/
+      }
+   }
 }
-
 /* Task for asynchronous UDP communications with dashboard */
 void dashboard(void){
     /*TODO create and format a message to the Dashboard */
