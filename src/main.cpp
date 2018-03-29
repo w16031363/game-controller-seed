@@ -40,7 +40,7 @@ void user_input(void){
     the MBED board, including altitude,fuel,isflying,iscrashed
 */
 /*TODO YOU will have to hardwire the IP address in here */
-SocketAddress lander("192.168.4.204",65200);
+SocketAddress lander("192.168.1.165",65200);
 SocketAddress dash("192.168.1.13",65250);
 
 EthernetInterface eth;
@@ -78,7 +78,7 @@ int main() {
     acc.enable();
 
     /* ethernet connection : usually takes a few seconds */
-    printf("conecting \n");
+    printf("connecting \n");
     eth.connect();
     /* write obtained IP address to serial monitor */
     const char *ip = eth.get_ip_address();
