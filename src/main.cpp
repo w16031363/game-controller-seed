@@ -31,6 +31,7 @@ void user_input(void){
     acc.getAxis(a);
     lcd.locate(0,0);
     float magnitude = sqrt(a.x*a.x+a.x*a.x+a.x*a.x);
+    lcd.printf("axis x:%3.1f (%3.1f)\n",a.x, magnitude);
     a.x = a.x/magnitude;
     a.y = a.y/magnitude;
     a.y = a.y/magnitude;
