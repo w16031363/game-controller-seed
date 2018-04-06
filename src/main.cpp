@@ -29,12 +29,16 @@ AnalogIn  left(A0);
 void user_input(void){
     motion_data_units_t a;
     acc.getAxis(a);
-
+    lcd.locate(0,0);
+    float magnitude = sqrt(a.x*a.x+a.x*a.x+a.x*a.x);
+    a.x = a.x/magnitude;
+    a.y = a.y/magnitude;
+    a.y = a.y/magnitude;
+    float angle = asin(a.x);
     /*TODO decide on what roll rate -1..+1 to ask for */
 
     /*TODO decide on what throttle setting 0..100 to ask for */
 }
-
 /* States from Lander */
 /*TODO Variables to hold the state of the lander as returned to
     the MBED board, including altitude,fuel,isflying,iscrashed
@@ -42,23 +46,20 @@ void user_input(void){
 /*YOU will have to hardwire the IP address in here */
 SocketAddress lander("192.168.1.165",65200);
 SocketAddress dash("192.168.1.13",65250);
-
 EthernetInterface eth;
 UDPSocket udp;
 
 /* Task for synchronous UDP communications with lander */
 void communications(void){
     SocketAddress source;
-
     /*Create and format the message to send to the Lander */
     char buffer[512];
     sprintf(buffer, "command:!\n....");
-    /* Send and recieve messages*/
+    /* Send and receive messages*/
     udp.sendto( lander, buffer, strlen(buffer));
     nsapi_size_or_error_t  n =
                  udp.recvfrom(&source, buffer, sizeof(buffer));
     buffer[n] = '\0';
-
     /* Unpack incomming message */
     /*split message into lines*/
     /*for each line */
@@ -106,12 +107,12 @@ int main() {
     printf("dash   is on %s/%d\n",dash.get_ip_address(),dash.get_port() );
 
     /* periodic tasks */
-    /*TODO call periodic tasks;
+    /* call periodic tasks;
             communications, user_input, dashboard
-            at desired rates.
+            at desired rates.*/
 
-      periodic.call_every(<time in ms>, <function to call>);
-    */
+    periodic.call_every(50, user_input);
+
 
     /* start event dispatching thread */
     dispatch.start( callback(&periodic, &EventQueue::dispatch_forever) );
