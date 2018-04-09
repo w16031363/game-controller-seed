@@ -13,20 +13,31 @@ C12832 lcd(D11, D13, D12, D7, D10);
 /* event queue and thread support */
 Thread dispatch;
 EventQueue periodic;
-
 /* Accelerometer */
 I2C i2c(PTE25, PTE24);
 FXOS8700QAccelerometer acc(i2c, FXOS8700CQ_SLAVE_ADDR1);
-
+/*YOU will have to hardwire the IP address in here */
+SocketAddress lander("192.168.1.165",65200);
+SocketAddress dash("192.168.1.13",65250);
+EthernetInterface eth;
+UDPSocket udp;
 /* Input from Potentiometers */
 AnalogIn  left(A0);
 
+float constrain(float value, float lower, float upper) {
+    if( value<lower ) value=lower;
+    if( value>upper ) value=upper;
+    return value;
+}
 /* User input states */
-/*TODO define variables to hold the users desired actions.
-    (roll rate and throttle setting)
-*/
+/* define variables to hold the users desired actions.*/
+float throttle = 0.0;
+float last1 = 0;
+float last2 = 0;
+float integral = 0;
 /* Task for polling sensors */
 void user_input(void){
+    char buffer[512];
     motion_data_units_t a;
     acc.getAxis(a);
     lcd.locate(0,0);
@@ -35,7 +46,22 @@ void user_input(void){
     a.x = a.x/magnitude;
     a.y = a.y/magnitude;
     a.y = a.y/magnitude;
+    lcd.printf("axis x:%3.1f (%3.1f)\n",a.x, magnitude);
     float angle = asin(a.x);
+    lcd.printf("angle: %.2f ",angle);
+    float P = (error-last1);
+    float I = (error);
+    float D = (error-2*last1+last2);
+    float Kp =5, Ki = 3, Kd = 3;
+//    float Kp =10, Ki = 5, Kd = 0.1;
+    throttle += ( Kp*P + Ki*I  + Kd*D)/1000;
+    throttle = constrain(throttle,0,1);
+    sprintf(buffer,"throttle:%f\n",throttle);
+    send(buffer,strlen(buffer));
+    last2 = last1;
+    last1 = error;
+    sprintf(buffer,"roll:%.2f\nthrottle:%.2f\n", angle, throttle);
+    udp.sendto( lander, buffer, strlen(buffer));
     /*TODO decide on what roll rate -1..+1 to ask for */
 
     /*TODO decide on what throttle setting 0..100 to ask for */
@@ -44,11 +70,6 @@ void user_input(void){
 /*TODO Variables to hold the state of the lander as returned to
     the MBED board, including altitude,fuel,isflying,iscrashed
 */
-/*YOU will have to hardwire the IP address in here */
-SocketAddress lander("192.168.1.165",65200);
-SocketAddress dash("192.168.1.13",65250);
-EthernetInterface eth;
-UDPSocket udp;
 
 /* Task for synchronous UDP communications with lander */
 void communications(void){
@@ -93,31 +114,23 @@ void dashboard(void){
 
 int main() {
     acc.enable();
-
     /* ethernet connection : usually takes a few seconds */
     printf("connecting \n");
     eth.connect();
     /* write obtained IP address to serial monitor */
     const char *ip = eth.get_ip_address();
     printf("IP address is: %s\n", ip ? ip : "No IP");
-
     /* open udp for communications on the ethernet */
     udp.open( &eth);
-
     printf("lander is on %s/%d\n",lander.get_ip_address(),lander.get_port() );
     printf("dash   is on %s/%d\n",dash.get_ip_address(),dash.get_port() );
-
     /* periodic tasks */
     /* call periodic tasks;
             communications, user_input, dashboard
             at desired rates.*/
-
     periodic.call_every(50, user_input);
-
-
     /* start event dispatching thread */
     dispatch.start( callback(&periodic, &EventQueue::dispatch_forever) );
-
     while(1) {
         /* update display at whatever rate is possible */
         /*TODO show user information on the LCD */
