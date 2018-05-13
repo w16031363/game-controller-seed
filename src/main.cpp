@@ -23,7 +23,7 @@ void redOn(void) { red.write(0); }
 void redOff(void) { red.write(1); }
 
 /* Input from Potentiometers */
-AnalogIn  left(A0);
+AnalogIn left(A0);
 AnalogIn right(A1);
 
 /* User input states */
@@ -67,11 +67,11 @@ void communications(void){
     char rollString[50];
     if(roll > 0)
     {
-      sprintf(rollString, "+%.1lf" , roll);
+      sprintf(rollString,"+%.1lf",roll);
     }
     else
     {
-      sprintf(rollString, "%.1lf" , roll);
+      sprintf(rollString,"%.1lf",roll);
     }
 
     char buffer [512];
